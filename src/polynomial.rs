@@ -1,3 +1,8 @@
+#[allow(unused_imports)]
+#[allow(non_snake_case)]
+#[allow(dead_code)]
+#[allow(unused_variables)]
+
 //taken from https://github.com/proxima-one/kzg
 
 use bls12_381::Scalar;

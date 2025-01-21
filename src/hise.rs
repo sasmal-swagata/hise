@@ -1,3 +1,8 @@
+#[allow(unused_imports)]
+#[allow(non_snake_case)]
+#[allow(dead_code)]
+#[allow(unused_variables)]
+
 use bls12_381::{pairing, G1Projective, G2Projective, Scalar, Gt};
 use pairing::group::{Curve, GroupEncoding};
 use ff::*;
@@ -403,165 +408,6 @@ pub mod tests {
     use std::time::{Instant};
 
     #[test]
-    fn test_enc_latency() {
-        // n = 6,12,18.24
-        // t = n/3: 2, 4, 6, 8
-        let rows = [[2,4,6,8], [3,6,9,12], [4,8,12,16]];
-        for row in rows.iter() {
-            for t in row.iter() {
-                let t = *t as usize; let n = t;
-
-                let mut durations = vec![];
-                let mut γ = Hise::encrypt_client_phase_1();
-
-                for m in [1, 100, 10000].iter() {
-                    let m = *m as usize;
-
-                    let (pp, keys, coms) = Hise::setup(n, t);
-
-                    let mut server_responses = vec![];
-                    for i in 0..n {
-                        let (stmt, proof) = Hise::encrypt_server(&pp, &keys[i], &coms[i], γ);
-                        server_responses.push((stmt, proof));
-                    }
-            
-                    let now = Instant::now();
-                    let _ = Hise::encrypt_server(&pp, &keys[0], &coms[0], γ);
-                    Hise::encrypt_client_phase_2(m, &server_responses);
-                    let duration = now.elapsed();
-                    println!("ATSE encrypt for {} nodes and {} messages: {} seconds",
-                            t, m, duration.as_secs_f32());
-                    durations.push(duration.as_secs_f32());
-                }
-                print!("t = {}: ", t);
-                for duration in durations.iter() {
-                    print!("{:.3} & ", duration);
-                }
-                print!("\n");
-            }
-        }
-    }
-
-    #[test]
-    fn test_dec_latency() {
-        // n = 6,12,18.24
-        // t = n/3: 2, 4, 6, 8
-        let rows = [[2,4,6,8], [3,6,9,12], [4,8,12,16]];
-        for row in rows.iter() {
-            for t in row.iter() {
-                let t = *t as usize; let n = t;
-
-                let mut durations = vec![];
-                for m in [1, 100, 10000].iter() {
-                    let m = *m as usize;
-
-                    let (pp, keys, coms) = Hise::setup(n, t);
-
-                    let mut server_responses = vec![];
-                    let (mut x_eps, mut x_w) = Hise::decrypt_client_phase_1();
-
-                    for i in 0..n {
-                        let (stmt, proof) = Hise::decrypt_server(&pp, &keys[i], &coms[i], x_eps, x_w);
-                        server_responses.push((stmt, proof));
-                    }
-            
-                    let now = Instant::now();
-                    let _ = Hise::decrypt_server(&pp, &keys[0], &coms[0], x_eps, x_w);
-                    Hise::decrypt_client_phase_2(m, &server_responses);
-                    let duration = now.elapsed();
-                    println!("HiSE decrypt for {} nodes and {} messages: {} seconds",
-                            t, m, duration.as_secs_f32());
-                    durations.push(duration.as_secs_f32());
-                }
-                print!("t = {}: ", t);
-                for duration in durations.iter() {
-                    print!("{:.3} & ", duration);
-                }
-                print!("\n");
-            }
-        }
-    }
-
-    #[test]
-    fn test_enc_throughput() {
-        let num_cpu = 16;
-        let rows = [[2,4,6,8], [3,6,9,12], [4,8,12,16]];
-        for row in rows.iter() {
-            for t in row.iter() {
-                let t = *t as usize; let n = t;
-
-                let mut measurements = vec![];
-                for m in [1, 100, 10000].iter() {
-                    let m = *m as usize;
-
-                    let (pp, keys, coms) = Hise::setup(n, t);
-
-                    let mut server_responses = vec![];
-                    let mut γ = Hise::encrypt_client_phase_1();
-
-                    for i in 0..n {
-                        let (stmt, proof) = Hise::encrypt_server(&pp, &keys[i], &coms[i], γ);
-                        server_responses.push((stmt, proof));
-                    }
-            
-                    let now = Instant::now();
-                    Hise::encrypt_client_phase_2(m, &server_responses);
-                    let duration = now.elapsed().as_secs_f32();
-                    let throughput = (num_cpu as f32) * ((m as f32) / duration);
-                    println!("HISE throughput for {} nodes and {} messages: {} seconds; {} enc/sec",
-                            t, m, duration, throughput);
-                    measurements.push(throughput);
-                }
-                print!("t = {}: ", t);
-                for throughput in measurements.iter() {
-                    print!("{:.2} & ", throughput);
-                }
-                print!("\n");
-            }
-        }
-    }
-
-    #[test]
-    fn test_dec_throughput() {
-        let num_cpu = 16;
-        let rows = [[2,4,6,8], [3,6,9,12], [4,8,12,16]];
-        for row in rows.iter() {
-            for t in row.iter() {
-                let t = *t as usize; let n = t;
-
-                let mut measurements = vec![];
-                for m in [1, 100, 10000].iter() {
-                    let m = *m as usize;
-
-                    let (pp, keys, coms) = Hise::setup(n, t);
-
-                    let mut server_responses = vec![];
-                    let (mut x_eps, mut x_w) = Hise::decrypt_client_phase_1();
-
-                    for i in 0..n {
-                        let (stmt, proof) = Hise::decrypt_server(&pp, &keys[i], &coms[i], x_eps, x_w);
-                        server_responses.push((stmt, proof));
-                    }
-            
-                    let now = Instant::now();
-                    Hise::decrypt_client_phase_2(m, &server_responses);
-                    let duration = now.elapsed().as_secs_f32();
-                    let throughput = (num_cpu as f32) * ((m as f32) / duration);
-                    println!("HISE throughput for {} nodes and {} messages: {} seconds; {} enc/sec",
-                            t, m, duration, throughput);
-                    measurements.push(throughput);
-                }
-                print!("t = {}: ", t);
-                for throughput in measurements.iter() {
-                    print!("{:.2} & ", throughput);
-                }
-                print!("\n");
-            }
-        }
-    }
-
-
-    #[test]
     fn test_correctness_enc_nizk() {
         let mut rng = thread_rng();
 
@@ -585,30 +431,4 @@ pub mod tests {
         assert!(check);
     }
 
-    /* 
-    #[test]
-    fn test_correctness_dec_nizk() {
-        let mut rng = thread_rng();
-
-        let α1 = Scalar::random(&mut rng);
-        let α2 = Scalar::random(&mut rng);
-        let witness = AtseNizkWitness { α1, α2 };
-
-        let h_of_x = utils::hash_to_g1(Atse::get_random_data_commitment().as_slice());
-        let h_of_q = utils::hash_to_g2(Atse::get_random_data_commitment().as_slice());
-        let e_base = pairing(&h_of_x.to_affine(), &h_of_q.to_affine());
-
-        let pp = AtseNizkProofParams::new();
-        let stmt = AtseDecNizkStatement {
-            egg: pp.egg.clone(),
-            egh: pp.egh.clone(),
-            e_base: e_base,
-            e_base_pow_a: e_base.mul(&α1),
-            com: utils::pedersen_commit_in_gt(&pp.egg, &pp.egh, &α1, &α2)
-        };
-        let proof = AtseDecNizkProof::prove(&witness, &stmt);
-        let check = AtseDecNizkProof::verify(&stmt, &proof);
-        assert!(check);
-    }
-    */
 }

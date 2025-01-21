@@ -1,3 +1,8 @@
+#[allow(unused_imports)]
+#[allow(non_snake_case)]
+#[allow(dead_code)]
+#[allow(unused_variables)]
+
 use pairing::group::ff::PrimeField;
 use std::ops::*;
 use bls12_381::*;

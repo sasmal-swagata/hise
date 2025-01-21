@@ -1,3 +1,8 @@
+#[allow(unused_imports)]
+#[allow(non_snake_case)]
+#[allow(dead_code)]
+#[allow(unused_variables)]
+
 use bls12_381::{pairing, G1Projective, G2Projective, Scalar};
 use pairing::group::{
     prime::{PrimeCurve, PrimeCurveAffine, PrimeGroup},
